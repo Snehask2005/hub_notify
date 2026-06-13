@@ -12,23 +12,35 @@ from app.workers import (
     file_worker,
     rag_worker,
     sms_worker,
+    ai_worker,
+    embedding_worker,
+    memory_worker,
 )
-
+from app.queue.queue_manager import setup_queues
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Start all queue workers as background tasks
+
+    await setup_queues()
+
     workers = [
         file_worker.run,
         rag_worker.run,
         email_worker.run,
         sms_worker.run,
         analytics_worker.run,
+        ai_worker.run,
+        embedding_worker.run,
+        memory_worker.run,
     ]
+
     tasks = [asyncio.create_task(w()) for w in workers]
+
     yield
+
     for t in tasks:
         t.cancel()
+
     await asyncio.gather(*tasks, return_exceptions=True)
 
 
